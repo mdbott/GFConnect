@@ -81,7 +81,7 @@ class ScanDelegate(btle.DefaultDelegate):
       print("Received new data from %s" % dev.addr)
 
 class GFDelegate(btle.DefaultDelegate):
-  def __init__(self, hndl):
+  def __init__(self):
     btle.DefaultDelegate.__init__(self)
     print("handleNotification init")
     self.hndl = hndl;
@@ -122,6 +122,7 @@ class Grainfather:
     self.periphial = None
     self.writechar = None
     self.notifychar = None
+    self.notifyhandle = None
     self.mashsteps = 0
     self.hopstand = 0
 
@@ -204,7 +205,8 @@ class Grainfather:
     gfService = self.periphial.getServiceByUUID(self.GATTUUID)
     self.writechar = gfService.getCharacteristics(self.WRITEUUID)[0]
     self.notifychar = gfService.getCharacteristics(self.NOTIFYUUID)[0]
-    self.periphial.setDelegate(GFDelegate())
+    self.notifyhandle = gfService.getCharacteristics(self.NOTIFYUUID).getHandle()
+    self.periphial.setDelegate(GFDelegate(self.notifyhandle))
 
   def disconnect(self):
     if self.periphial:
@@ -253,10 +255,12 @@ if __name__ == '__main__':
     gf.write(rawcmd)
   else:
     while True:
-    if gf.periphial.waitForNotifications(0.5):
+      if gf.periphial.waitForNotifications(0.5):
         print("Notification received")
         continue
-
+      sec += 1
+      if sec >= 5:
+        break
     #print("Waiting for notifications...")
     # Test some stuff
 
