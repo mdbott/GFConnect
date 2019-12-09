@@ -3,7 +3,7 @@
 #program name: gfConnect.py
 #Author: S Taylor
 #Date: 15-Jun-19
-#Purpose: Proof of concept for connecting and controlling the Grainfather Connect Boiler Controller from my RPI (2 - with bluetooth dongle & 3) 
+#Purpose: Proof of concept for connecting and controlling the Grainfather Connect Boiler Controller from my RPI (2 - with bluetooth dongle & 3)
 #Version: 0.1
 #Requires:  RPI (or Linux host!), Bluez, Bluepy (Python moodule), Python 2.7
 ########################
@@ -25,7 +25,7 @@
 #delayed heating: Bx,y, where x = minutes, y = seconds. use C0 to cancel this function. Example: B2,0,
 #set button press: T
 #skip to: NX,0,0,0,0,1, - where X is step number. Count mash steps, sparge,
-#                         boil and hopstand.  E.g. 3 mash steps (inc mash out), 
+#                         boil and hopstand.  E.g. 3 mash steps (inc mash out),
 #                         sparge, boil and hopstand: skip to hopstand would
 #                         be N6,0,0,0,0,1,
 
@@ -55,7 +55,7 @@
 #"10,",       # third boil addition
 #"23:1,",     # first mash step
 #"23:1,"      # second mash step
- 
+
 ###other stuff to be confirmed:
 
 #set mash step 1 to 65C for 60 minutes: 'a1,60,65,'
@@ -80,15 +80,21 @@ class ScanDelegate(btle.DefaultDelegate):
     elif isNewData:
       print("Received new data from %s" % dev.addr)
 
-class NotifyDelegate(btle.DefaultDelegate):
-  def __init__(self):
+class GFDelegate(btle.DefaultDelegate):
+  def __init__(self, hndl):
     btle.DefaultDelegate.__init__(self)
+    print("handleNotification init")
+    self.hndl = hndl;
 
-    def handleNotification(self, cHandle, data):
+  def handleNotification(self, cHandle, data):
+    if (cHandle == self.hndl):
+      print("handleNotification handle 0x%04X, data %s" % (cHandle, str(hexlify(data))))
+    else:
+      print("handleNotification handle 0x%04X unknown" % (cHandle))
     # ... perhaps check cHandle
     # ... process 'data'
-      print("cHandle: %s" % cHandle)
-      print("data: %s" % data)
+    print("cHandle: %s" % cHandle)
+    print("data: %s" % data)
 
 def pad_command(arg1):
   #GF Connect seems to require a max of 19 characters for commands
@@ -127,7 +133,7 @@ class Grainfather:
   def subscribe(self):
     if self.periphial:
       handle = self.writechar.valHandle + 1
-      self.periphial.writeCharacteristic(handle, 
+      self.periphial.writeCharacteristic(handle,
         b"\x01\x00")
       # "\x05\x00\x04\x00\x12\x0f\x00\x01\x00"
       for i in range(10):
@@ -173,7 +179,7 @@ class Grainfather:
 
   def temp_down(self):
     self.write("D")
-  
+
   def delayed_heating(self, minutes):
     self.write("B%i,0," % minutes)
 
@@ -198,7 +204,7 @@ class Grainfather:
     gfService = self.periphial.getServiceByUUID(self.GATTUUID)
     self.writechar = gfService.getCharacteristics(self.WRITEUUID)[0]
     self.notifychar = gfService.getCharacteristics(self.NOTIFYUUID)[0]
-    self.periphial.setDelegate(NotifyDelegate())
+    self.periphial.setDelegate(GFDelegate())
 
   def disconnect(self):
     if self.periphial:
@@ -214,7 +220,7 @@ class Grainfather:
     self.hopstand = hopstand
     cmds = ["R%i,%i,%.1f,%1f," % (boiltime, len(mashsteps), fillvol,
       spargevol)]
-    cmds.append("%i,%i,%i,0,0," % 
+    cmds.append("%i,%i,%i,0,0," %
             (wateradditions, spargeindicator, spargewaterremind))
     cmds.append(name[0:19].upper())
     cmds.append("%i,%i,%i,0," % (hopstand, len(boiladditions), boilpowerctrl))
@@ -233,7 +239,7 @@ if __name__ == '__main__':
   optlist, args = getopt.getopt(sys.argv[1:], 'b:h', ['device=', 'help'])
   for opt, optval in optlist:
     if opt in ("-h", "--help"):
-      sys.exit("Usage:\n  %s [-b<MAC>] [--device=<MAC>] [command]" % 
+      sys.exit("Usage:\n  %s [-b<MAC>] [--device=<MAC>] [command]" %
           sys.argv[0])
     if opt in ("-b", "--device"):
       mac=optval
@@ -246,19 +252,25 @@ if __name__ == '__main__':
   if rawcmd:
     gf.write(rawcmd)
   else:
+    while True:
+    if gf.periphial.waitForNotifications(0.5):
+        print("Notification received")
+        continue
+
+    #print("Waiting for notifications...")
     # Test some stuff
+
     #gf.quit_session()
-    gf.toggle_pump()
-    name = "test recipe with a too long name".upper()
-    boiltime = 90
-    mashsteps = ((45,10), (67, 60), (75, 10))
-    fillvol = 16.7
-    spargevol = 13.3
-    boiladditions = (60, 30, 15)
-    gf.set_recipe(name, boiltime, mashsteps, fillvol, spargevol, boiladditions,
-            hopstand=10)
-    time.sleep(1)
+    # gf.toggle_pump()
+    # name = "test recipe with a too long name".upper()
+    # boiltime = 90
+    # mashsteps = ((45,10), (67, 60), (75, 10))
+    # fillvol = 16.7
+    # spargevol = 13.3
+    # boiladditions = (60, 30, 15)
+    # gf.set_recipe(name, boiltime, mashsteps, fillvol, spargevol, boiladditions,
+    #         hopstand=10)
+    # time.sleep(1)
 
   time.sleep(0.5)
   del(gf)
-
