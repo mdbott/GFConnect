@@ -90,33 +90,33 @@ class GFDelegate(btle.DefaultDelegate):
             #print("data: %s" % data)
             payload = data[1:].split(',')
             if data[0] == 'X':
-                print("Current Setpoint: %s" % payload[0])
-                print("Current Temperature: %s" % payload[1])
+                Grainfather.parameters["setpoint"] = payload[0]
+                Grainfather.parameters["temperature"] = payload[1])
             if data[0] == 'Y':
-                print("Heater Power: %s" % payload[0])
-                print("Pump Status: %s" % payload[1])
-                print("Auto Mode Status: %s" % payload[2])
-                print("Stage Ramp Status: %s" % payload[3])
-                print("Interaction Mode Status: %s" % payload[4])
-                print("Interaction Code: %s" % payload[5])
-                print("Stage Number: %s" % payload[6])
-                print("Delayed Heat Mode: %s" % payload[7])
+                Grainfather.parameters["heater_power"] = payload[0])
+                Grainfather.parameters["pump_status"] = payload[1])
+                Grainfather.parameters["auto_mode_status"] = payload[2])
+                Grainfather.parameters["stage_ramp_status"] = payload[3])
+                Grainfather.parameters["interaction_mode_status"] = payload[4])
+                Grainfather.parameters["interaction_code"] = payload[5])
+                Grainfather.parameters["stage_number"] = payload[6])
+                Grainfather.parameters["delayed_heat_mode"] = payload[7])
             if data[0] == 'W':
-                print("Heat Power Output Percentage: %s" % payload[0])
-                print("Is Timer Paused: %s" % payload[1])
-                print("Step Mash Mode: %s" % payload[2])
-                print("Is Recipe Interrupted: %s" % payload[3])
-                print("Manual Power Mode: %s" % payload[4])
-                print("Sparge Water Alert Displayed: %s" % payload[5])
+                Grainfather.parameters["heater_percentage"] = payload[0])
+                Grainfather.parameters["timer_paused"] = payload[1])
+                Grainfather.parameters["step_mash_mode"] = payload[2])
+                Grainfather.parameters["recipe_interrupted"] = payload[3])
+                Grainfather.parameters["manual_power_mode"] = payload[4])
+                Grainfather.parameters["sparge_alert_mode"] = payload[5])
             if data[0] == 'T':
-                print("Timer Active: %s" % payload[0])
-                print("Time Left (Minutes): %s" % payload[1])
-                print("Timer Total Start Time: %s" % payload[2])
-                print("Time Left (Seconds): %s" % payload[3])
+                Grainfather.parameters["timer_active"] = payload[0])
+                Grainfather.parameters["time_left_mins"] = payload[1])
+                Grainfather.parameters["total_start_time"] = payload[2])
+                Grainfather.parameters["time_left_secs"] = payload[3])
             if data[0] == 'C':
-                print("Boil Temperature: %s" % payload[0])
+                Grainfather.parameters["boil_temperature"] = payload[0])
             if data[0] == 'I':
-                print("Interaction Code: %s" % payload[0])
+                Grainfather.parameters["interaction_code2"] = payload[0])
         else:
             print("handleNotification handle 0x%04X unknown" % (cHandle))
 
@@ -137,9 +137,11 @@ def scan():
   return gfs
 
 class Grainfather:
+  notifOn = b"\x01\x00"
+  notifOff = b"\x00\x00"
   GATTUUID = "0000cdd0-0000-1000-8000-00805f9b34fb"
   WRITEUUID = "0003cdd2-0000-1000-8000-00805f9b0131"
-  NOTIFYUUID = "0003CDD1-0000-1000-8000-00805F9B0131"
+  NOTIFYUUID = "0003cdd1-0000-1000-8000-00805f9b0131"
 
   def __init__(self):
     self.mac = None
@@ -155,15 +157,19 @@ class Grainfather:
     if self.peripheral:
       self.writechar.write(pad_command(cmd.encode()), False)
 
-  # FIXME: subscription not figured out yet
   def subscribe(self):
     if self.peripheral:
-      handle = self.writechar.valHandle + 1
-      self.peripheral.writeCharacteristic(handle,
-        b"\x01\x00")
-      # "\x05\x00\x04\x00\x12\x0f\x00\x01\x00"
+      print("Enabling notifications...")
+      char = self.peripheral.getCharacteristics(uuid=self.NOTIFYUUID)[0]
+      ccc_desc = char.getDescriptors(forUUID=0x2902)[0]
+      ccc_desc.write(self.notifOn, withResponse=True)
+      print("\tDone")
       for i in range(10):
           self.peripheral.waitForNotifications(1.0)
+          if self.peripheral.waitForNotifications(1.0):
+              print("Notification received")
+              continue
+          print("Waiting for notifications...")
           time.sleep(0.1)
 
   def unsubscribe(self):
@@ -229,9 +235,10 @@ class Grainfather:
     services = self.peripheral.getServices()
     gfService = self.peripheral.getServiceByUUID(self.GATTUUID)
     self.writechar = gfService.getCharacteristics(self.WRITEUUID)[0]
+    self.writehandle = gfService.getCharacteristics(self.WRITEUUID)[0].getHandle()
     self.notifychar = gfService.getCharacteristics(self.NOTIFYUUID)[0]
-    self.notifyhandle = gfService.getCharacteristics(self.NOTIFYUUID).getHandle()
-    self.peripheral.setDelegate(GFDelegate(self.notifyhandle))
+    self.notifyhandle = gfService.getCharacteristics(self.NOTIFYUUID)[0].getHandle()
+    self.peripheral.withDelegate(GFDelegate(self.notifyhandle))
 
   def disconnect(self):
     if self.peripheral:
@@ -279,14 +286,29 @@ if __name__ == '__main__':
   if rawcmd:
     gf.write(rawcmd)
   else:
-    while True:
-      if gf.peripheral.waitForNotifications(0.5):
-        print("Notification received")
-        continue
-      sec += 1
-      if sec >= 5:
-        break
-    #print("Waiting for notifications...")
+    gf.subscribe()
+    print("Current Setpoint: %s" % gf.parameters["setpoint"])
+    print("Current Temperature: %s" % gf.parameters["temperature"])
+    print("Heater Power: %s" % gf.parameters["heater_power"])
+    print("Pump Status: %s" % gf.parameters["pump_status"])
+    print("Auto Mode Status: %s" % gf.parameters["auto_mode_status"])
+    print("Stage Ramp Status: %s" % gf.parameters["stage_ramp_status"])
+    print("Interaction Mode Status: %s" % gf.parameters["interaction_mode_status"])
+    print("Interaction Code: %s" % gf.parameters["interaction_code"])
+    print("Stage Number: %s" % gf.parameters["stage_number"])
+    print("Delayed Heat Mode: %s" % gf.parameters["delayed_heat_mode"])
+    print("Heat Power Output Percentage: %s" % gf.parameters["heater_percentage"])
+    print("Is Timer Paused: %s" % gf.parameters["timer_paused"])
+    print("Step Mash Mode: %s" % gf.parameters["step_mash_mode"])
+    print("Is Recipe Interrupted: %s" % gf.parameters["recipe_interrupted"])
+    print("Manual Power Mode: %s" % gf.parameters["manual_power_mode"])
+    print("Sparge Water Alert Displayed: %s" % gf.parameters["sparge_alert_mode"])
+    print("Timer Active: %s" % gf.parameters["timer_active"])
+    print("Time Left (Minutes): %s" % gf.parameters["time_left_mins"])
+    print("Timer Total Start Time: %s" % gf.parameters["total_start_time"])
+    print("Time Left (Seconds): %s" % gf.parameters["time_left_secs"])
+    print("Boil Temperature: %s" % gf.parameters["boil_temperature"])
+    print("Interaction Code 2: %s" % gf.parameters["interaction_code2")
     # Test some stuff
 
     #gf.quit_session()
