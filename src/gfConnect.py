@@ -81,7 +81,7 @@ class ScanDelegate(btle.DefaultDelegate):
       print("Received new data from %s" % dev.addr)
 
 class GFDelegate(btle.DefaultDelegate):
-  def __init__(self):
+  def __init__(self, hndl):
     btle.DefaultDelegate.__init__(self)
     self.hndl = hndl;
 
@@ -308,7 +308,7 @@ if __name__ == '__main__':
     print("Timer Total Start Time: %s" % gf.parameters["total_start_time"])
     print("Time Left (Seconds): %s" % gf.parameters["time_left_secs"])
     print("Boil Temperature: %s" % gf.parameters["boil_temperature"])
-    print("Interaction Code 2: %s" % gf.parameters["interaction_code2")
+    print("Interaction Code 2: %s" % gf.parameters["interaction_code2"])
     # Test some stuff
 
     #gf.quit_session()
