@@ -152,7 +152,6 @@ class Grainfather:
     self.notifyhandle = None
     self.mashsteps = 0
     self.hopstand = 0
-    #self.parameters = {}
 
   def write(self, cmd):
     if self.peripheral:
@@ -166,7 +165,7 @@ class Grainfather:
       ccc_desc.write(self.notifOn, withResponse=True)
       #print("\tDone")
       for i in range(10):
-          self.peripheral.waitForNotifications(1.0)
+          self.peripheral.waitForNotifications(0.5)
           if self.peripheral.waitForNotifications(1.0):
               #print("Notification received")
               continue
