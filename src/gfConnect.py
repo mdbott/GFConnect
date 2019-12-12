@@ -83,18 +83,42 @@ class ScanDelegate(btle.DefaultDelegate):
 class GFDelegate(btle.DefaultDelegate):
   def __init__(self):
     btle.DefaultDelegate.__init__(self)
-    print("handleNotification init")
     self.hndl = hndl;
 
   def handleNotification(self, cHandle, data):
-    if (cHandle == self.hndl):
-      print("handleNotification handle 0x%04X, data %s" % (cHandle, str(hexlify(data))))
-    else:
-      print("handleNotification handle 0x%04X unknown" % (cHandle))
-    # ... perhaps check cHandle
-    # ... process 'data'
-    print("cHandle: %s" % cHandle)
-    print("data: %s" % data)
+        if (cHandle == self.hndl):
+            #print("data: %s" % data)
+            payload = data[1:].split(',')
+            if data[0] == 'X':
+                print("Current Setpoint: %s" % payload[0])
+                print("Current Temperature: %s" % payload[1])
+            if data[0] == 'Y':
+                print("Heater Power: %s" % payload[0])
+                print("Pump Status: %s" % payload[1])
+                print("Auto Mode Status: %s" % payload[2])
+                print("Stage Ramp Status: %s" % payload[3])
+                print("Interaction Mode Status: %s" % payload[4])
+                print("Interaction Code: %s" % payload[5])
+                print("Stage Number: %s" % payload[6])
+                print("Delayed Heat Mode: %s" % payload[7])
+            if data[0] == 'W':
+                print("Heat Power Output Percentage: %s" % payload[0])
+                print("Is Timer Paused: %s" % payload[1])
+                print("Step Mash Mode: %s" % payload[2])
+                print("Is Recipe Interrupted: %s" % payload[3])
+                print("Manual Power Mode: %s" % payload[4])
+                print("Sparge Water Alert Displayed: %s" % payload[5])
+            if data[0] == 'T':
+                print("Timer Active: %s" % payload[0])
+                print("Time Left (Minutes): %s" % payload[1])
+                print("Timer Total Start Time: %s" % payload[2])
+                print("Time Left (Seconds): %s" % payload[3])
+            if data[0] == 'C':
+                print("Boil Temperature: %s" % payload[0])
+            if data[0] == 'I':
+                print("Interaction Code: %s" % payload[0])
+        else:
+            print("handleNotification handle 0x%04X unknown" % (cHandle))
 
 def pad_command(arg1):
   #GF Connect seems to require a max of 19 characters for commands
@@ -119,26 +143,27 @@ class Grainfather:
 
   def __init__(self):
     self.mac = None
-    self.periphial = None
+    self.peripheral = None
     self.writechar = None
     self.notifychar = None
     self.notifyhandle = None
     self.mashsteps = 0
     self.hopstand = 0
+    self.parameters = {}
 
   def write(self, cmd):
-    if self.periphial:
+    if self.peripheral:
       self.writechar.write(pad_command(cmd.encode()), False)
 
   # FIXME: subscription not figured out yet
   def subscribe(self):
-    if self.periphial:
+    if self.peripheral:
       handle = self.writechar.valHandle + 1
-      self.periphial.writeCharacteristic(handle,
+      self.peripheral.writeCharacteristic(handle,
         b"\x01\x00")
       # "\x05\x00\x04\x00\x12\x0f\x00\x01\x00"
       for i in range(10):
-          self.periphial.waitForNotifications(1.0)
+          self.peripheral.waitForNotifications(1.0)
           time.sleep(0.1)
 
   def unsubscribe(self):
@@ -200,17 +225,17 @@ class Grainfather:
   def connect(self, mac=""):
     if mac:
       self.mac = mac
-    self.periphial = btle.Peripheral(self.mac)
-    services = self.periphial.getServices()
-    gfService = self.periphial.getServiceByUUID(self.GATTUUID)
+    self.peripheral = btle.Peripheral(self.mac)
+    services = self.peripheral.getServices()
+    gfService = self.peripheral.getServiceByUUID(self.GATTUUID)
     self.writechar = gfService.getCharacteristics(self.WRITEUUID)[0]
     self.notifychar = gfService.getCharacteristics(self.NOTIFYUUID)[0]
     self.notifyhandle = gfService.getCharacteristics(self.NOTIFYUUID).getHandle()
-    self.periphial.setDelegate(GFDelegate(self.notifyhandle))
+    self.peripheral.setDelegate(GFDelegate(self.notifyhandle))
 
   def disconnect(self):
-    if self.periphial:
-      self.periphial.disconnect()
+    if self.peripheral:
+      self.peripheral.disconnect()
 
   def __del__(self):
     self.disconnect()
@@ -255,7 +280,7 @@ if __name__ == '__main__':
     gf.write(rawcmd)
   else:
     while True:
-      if gf.periphial.waitForNotifications(0.5):
+      if gf.peripheral.waitForNotifications(0.5):
         print("Notification received")
         continue
       sec += 1
