@@ -142,6 +142,7 @@ class Grainfather:
   GATTUUID = "0000cdd0-0000-1000-8000-00805f9b34fb"
   WRITEUUID = "0003cdd2-0000-1000-8000-00805f9b0131"
   NOTIFYUUID = "0003cdd1-0000-1000-8000-00805f9b0131"
+  parameters = {}
 
   def __init__(self):
     self.mac = None
@@ -151,7 +152,7 @@ class Grainfather:
     self.notifyhandle = None
     self.mashsteps = 0
     self.hopstand = 0
-    self.parameters = {}
+    #self.parameters = {}
 
   def write(self, cmd):
     if self.peripheral:
@@ -159,17 +160,17 @@ class Grainfather:
 
   def subscribe(self):
     if self.peripheral:
-      print("Enabling notifications...")
+      #print("Enabling notifications...")
       char = self.peripheral.getCharacteristics(uuid=self.NOTIFYUUID)[0]
       ccc_desc = char.getDescriptors(forUUID=0x2902)[0]
       ccc_desc.write(self.notifOn, withResponse=True)
-      print("\tDone")
+      #print("\tDone")
       for i in range(10):
           self.peripheral.waitForNotifications(1.0)
           if self.peripheral.waitForNotifications(1.0):
-              print("Notification received")
+              #print("Notification received")
               continue
-          print("Waiting for notifications...")
+          #print("Waiting for notifications...")
           time.sleep(0.1)
 
   def unsubscribe(self):
@@ -307,8 +308,8 @@ if __name__ == '__main__':
     print("Time Left (Minutes): %s" % gf.parameters["time_left_mins"])
     print("Timer Total Start Time: %s" % gf.parameters["total_start_time"])
     print("Time Left (Seconds): %s" % gf.parameters["time_left_secs"])
-    print("Boil Temperature: %s" % gf.parameters["boil_temperature"])
-    print("Interaction Code 2: %s" % gf.parameters["interaction_code2"])
+    #print("Boil Temperature: %s" % gf.parameters["boil_temperature"])
+    #print("Interaction Code 2: %s" % gf.parameters["interaction_code2"])
     # Test some stuff
 
     #gf.quit_session()
