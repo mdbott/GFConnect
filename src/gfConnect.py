@@ -7,7 +7,7 @@
 #Version: 0.1
 #Requires:  RPI (or Linux host!), Bluez, Bluepy (Python moodule), Python 2.7
 ########################
-#Caller info: python gfConnect.py <GF Controller BLE Address> <command>
+#Caller info: python gfConnect.py --device=<GF Controller BLE Address> <command>
 #<GF Controller address> = ble address for GF Controller
 #<command> = enclosed command (including trailing commas where necessary) for activating functions on GF controller.
 #Example run command: python gfConnect.py BB:A0:50:12:09:1G '$70,'
@@ -35,15 +35,19 @@
 #Y0,0,0,0,0,0,0,0, : guessing pump or heat
 #W0,0,0,0,0,0,ZZZZ : guessing pump or heat
 
-#TBD: receipe mode options. - Connect controller characteristic seems to need 6 inputs for recipe mode.
+#Recipe mode options. - Connect controller characteristic needs 6 inputs for recipe mode.
 
 ###example recipe: simple 60 min recipe with no hop additions:
-#R60,2,14.3,16.9,
-#0,0,1,0,0,
-#TEST SCHEDULE1
-#0,0,0,0,
-#65:60,
-#75:10,
+#R75,2,14.3,16.9,                # 75 min boil, 2 mash steps, 14.3l mash 16.9l sparge
+#0,0,1,0,0,                      # No water treatment alert, no sparge counter, show sparge alert, no delayed session, do not skip the start
+#TEST SCHEDULE1                  # Recipe name
+#0,0,0,0,                        # No hop stand, 4 boil addition stops, no boil power mode, no strike temp mode
+#75,                             # Boil addition stop 1, at 75 minutes boil time remaining
+#45,                             # Boil addition stop 2, at 45 minutes boil time remaining
+#30,                             # Boil addition stop 3, at 30 minutes boil time remaining
+#10,                             # Boil addition stop 4, at 10 Minutes boil time remaining
+#65:60,                          # Mash step 1, 65C for 60 minutes
+#75:10,                          # Mash step 2, 75C for 10 minutes
 
 ### example recipe
 #"R90,2,17,15.3,", # 5 min boil, 2 mash steps, 17 mash water, 15.3 sparge
@@ -188,6 +192,12 @@ class Grainfather:
   def toggle_pump(self):
     self.write("P")
 
+  def stop_pump(self):
+    self.write("L0")
+
+  def start_pump(self):
+    self.write("L1")
+
   def quit_session(self):
     self.write("Q1")
 
@@ -197,7 +207,7 @@ class Grainfather:
   def cancel_timer(self):
     self.write("C")
 
-  def pause(self):
+  def pause_timer(self):
     self.write("G")
 
   def timer(self, minutes):
@@ -205,6 +215,12 @@ class Grainfather:
 
   def toggle_heat(self):
     self.write("H")
+
+  def stop_heat(self):
+    self.write("K0")
+
+  def start_heat(self):
+    self.write("K1")
 
   def temp_up(self):
     self.write("U")
