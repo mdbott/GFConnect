@@ -91,32 +91,32 @@ class GFDelegate(btle.DefaultDelegate):
             payload = data[1:].split(',')
             if data[0] == 'X':
                 Grainfather.parameters["setpoint"] = payload[0]
-                Grainfather.parameters["temperature"] = payload[1])
+                Grainfather.parameters["temperature"] = payload[1]
             if data[0] == 'Y':
-                Grainfather.parameters["heater_power"] = payload[0])
-                Grainfather.parameters["pump_status"] = payload[1])
-                Grainfather.parameters["auto_mode_status"] = payload[2])
-                Grainfather.parameters["stage_ramp_status"] = payload[3])
-                Grainfather.parameters["interaction_mode_status"] = payload[4])
-                Grainfather.parameters["interaction_code"] = payload[5])
-                Grainfather.parameters["stage_number"] = payload[6])
-                Grainfather.parameters["delayed_heat_mode"] = payload[7])
+                Grainfather.parameters["heater_power"] = payload[0]
+                Grainfather.parameters["pump_status"] = payload[1]
+                Grainfather.parameters["auto_mode_status"] = payload[2]
+                Grainfather.parameters["stage_ramp_status"] = payload[3]
+                Grainfather.parameters["interaction_mode_status"] = payload[4]
+                Grainfather.parameters["interaction_code"] = payload[5]
+                Grainfather.parameters["stage_number"] = payload[6]
+                Grainfather.parameters["delayed_heat_mode"] = payload[7]
             if data[0] == 'W':
-                Grainfather.parameters["heater_percentage"] = payload[0])
-                Grainfather.parameters["timer_paused"] = payload[1])
-                Grainfather.parameters["step_mash_mode"] = payload[2])
-                Grainfather.parameters["recipe_interrupted"] = payload[3])
-                Grainfather.parameters["manual_power_mode"] = payload[4])
-                Grainfather.parameters["sparge_alert_mode"] = payload[5])
+                Grainfather.parameters["heater_percentage"] = payload[0]
+                Grainfather.parameters["timer_paused"] = payload[1]
+                Grainfather.parameters["step_mash_mode"] = payload[2]
+                Grainfather.parameters["recipe_interrupted"] = payload[3]
+                Grainfather.parameters["manual_power_mode"] = payload[4]
+                Grainfather.parameters["sparge_alert_mode"] = payload[5]
             if data[0] == 'T':
-                Grainfather.parameters["timer_active"] = payload[0])
-                Grainfather.parameters["time_left_mins"] = payload[1])
-                Grainfather.parameters["total_start_time"] = payload[2])
-                Grainfather.parameters["time_left_secs"] = payload[3])
+                Grainfather.parameters["timer_active"] = payload[0]
+                Grainfather.parameters["time_left_mins"] = payload[1]
+                Grainfather.parameters["total_start_time"] = payload[2]
+                Grainfather.parameters["time_left_secs"] = payload[3]
             if data[0] == 'C':
-                Grainfather.parameters["boil_temperature"] = payload[0])
+                Grainfather.parameters["boil_temperature"] = payload[0]
             if data[0] == 'I':
-                Grainfather.parameters["interaction_code2"] = payload[0])
+                Grainfather.parameters["interaction_code2"] = payload[0]
         else:
             print("handleNotification handle 0x%04X unknown" % (cHandle))
 
